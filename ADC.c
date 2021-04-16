@@ -26,8 +26,28 @@
 // SS3 interrupts: flag set on completion but no interrupt requested
 void ADC_Init(uint32_t sac){ 
 // from lab 8
-
-
+	uint32_t delay; 
+	
+	SYSCTL_RCGCGPIO_R |= 0x08;  // activate Port D
+	while((SYSCTL_PRGPIO_R & 0x08) == 0){}; 
+	GPIO_PORTD_DIR_R &= ~0x04;	// make PD2 input 
+	GPIO_PORTD_AFSEL_R |= 0x04; // enable aternate fnc for PD2
+	GPIO_PORTD_DEN_R &= ~0x04;  // disable digital I/O for PD2
+	GPIO_PORTD_AMSEL_R |= 0x04; // enable analg fnc for PD2
+	SYSCTL_RCGCADC_R |= 0x01; // activate ADC0
+	delay = SYSCTL_RCGCADC_R; // extra time 2 stabilize
+	delay = SYSCTL_RCGCADC_R; 
+	delay = SYSCTL_RCGCADC_R; 
+	delay = SYSCTL_RCGCADC_R; 	
+	ADC0_PC_R = 0x01; 	// congfigure for 125K
+	ADC0_SSPRI_R = 0x0123; // seq3 = highest priority
+	ADC0_ACTSS_R &= ~0x0008; // disable sample sequencer 3
+	ADC0_EMUX_R &= ~0xF000; // seq3 is software trigger 
+	ADC0_SSMUX3_R = (ADC0_SSMUX3_R & 0xFFFFFFF0)+5; // Ain5 
+	ADC0_SSCTL3_R = 0x0006; // set IE0 and END0 (no TS0 and D0)
+	ADC0_IM_R &= ~0x0008; // disable SS3 interrupts
+	ADC0_ACTSS_R |= 0x0008; // enable sample sequencer 3
+	ADC0_SAC_R = sac; 
 }
 
 
@@ -37,7 +57,12 @@ void ADC_Init(uint32_t sac){
 // Output: 12-bit result of ADC conversion
 uint32_t ADC_In(void){  
 // from lab 8
-  return 0; //replace this line
+	uint32_t data; 
+	ADC0_PSSI_R = 0x0008; 
+	while((ADC0_RIS_R & 0x08) == 0){};
+	data = ADC0_SSFIFO3_R & 0xFFF; 
+	ADC0_ISC_R = 0x0008;
+	return data; 
 }
 
 
