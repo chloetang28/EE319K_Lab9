@@ -59,7 +59,16 @@ char Fifo_Get(void){char data;
 //         0 failure is when the FIFO is empty
 uint32_t Fifo_Status(void){
   //Complete this routine
-      return(0); // replace this line
+	uint8_t count = 0;
+	uint32_t PutIndex; 
+	if(PutI == GetI){
+		return count;
+	}
+	while(PutI != GetI){
+		count++;
+		PutIndex--;
+	}
+	return count;
 }
 
 
