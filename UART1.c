@@ -40,9 +40,10 @@ void UART1_Init(void){
 	GPIO_PORTC_DEN_R |= 0x30; 	
 	GPIO_PORTC_AMSEL_R &= ~0x30; 
 	UART1_IFLS_R = 0x38; // bits 3-5
-	UART1_IM_R = 0x70; // bits 4-6
+//	UART1_IM_R = 0x70; // bits 4-6
+	UART1_CTL_R |= (UART_CTL_UARTEN|UART_CTL_TXE|UART_CTL_RXE);
 	NVIC_PRI1_R = (NVIC_PRI1_R & 0xFFFF00FF) | 0x00004000; // priority 2
-	NVIC_EN0_R = 0x20; 
+	NVIC_EN0_R |= 0x20; 
 }
 
 //------------UART1_InChar------------
@@ -78,6 +79,16 @@ uint32_t UART1_InStatus(void){
 // Note: strips off STX CR and ETX
 void UART1_InMessage(char *bufPt){
   // write this
+	uint8_t length = 0; 
+	while((UART1_DR_R != 0x03) | (length != 8)){
+		*bufPt = UART1_DR_R;
+		length++;
+		bufPt++;
+	}
+	if(UART1_DR_R == 0x03){
+		bufPt--; 
+	}
+	*bufPt = '\0';
 }
 //------------UART1_OutChar------------
 // Output 8-bit to serial port
@@ -94,8 +105,6 @@ void UART1_OutChar(char data){
 // hardware RX FIFO goes from 7 to 8 or more items
 // Interrupts after receiving entire message
 
-int MailStatus;
-uint32_t MailValue;
 #define PF1       (*((volatile uint32_t *)0x40025008))
 void UART1_Handler(void){
   PF1 ^= 0x02;
