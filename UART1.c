@@ -27,6 +27,18 @@
 // Busy-wait for Tx
 void UART1_Init(void){
  // write this
+	SYSCTL_RCGCUART_R |= 0x0002; 
+	SYSCTL_RCGCGPIO_R |= 0x0003; 
+//	while((SYSCYL_PRGPIO_R&0X01) == 0){};
+	UART1_CTL_R &= ~0x0002; 
+	UART1_IBRD_R = 5000;
+	UART1_FBRD_R = 0;
+	UART1_LCRH_R = 0x0070;
+	UART1_CTL_R = 0x0301; 
+	GPIO_PORTC_AFSEL_R |= 0x30; 
+	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFFFFFF00) + 0x00000022;
+	GPIO_PORTC_DEN_R |= 0x30; 	
+	GPIO_PORTC_AMSEL_R &= ~0x30; 
 }
 
 //------------UART1_InChar------------
