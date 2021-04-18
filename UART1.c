@@ -76,8 +76,8 @@ void UART1_InMessage(char *bufPt){
 // Busy-wait synchronization
 // Interesting note for Lab9: it will never wait
 void UART1_OutChar(char data){
-  // write this
-
+	while((UART1_FR_R&0x0020) != 0);
+	UART1_DR_R = data;
 }
 
 // hardware RX FIFO goes from 7 to 8 or more items
