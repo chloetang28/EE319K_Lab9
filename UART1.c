@@ -29,7 +29,7 @@ void UART1_Init(void){
  // write this
 	SYSCTL_RCGCUART_R |= 0x0002; 
 	SYSCTL_RCGCGPIO_R |= 0x0003; 
-//	while((SYSCYL_PRGPIO_R&0X01) == 0){};
+//	while((SYSCYL_PRGPIO_R&0x01) == 0){};
 	UART1_CTL_R &= ~0x0002; 
 	UART1_IBRD_R = 5000;
 	UART1_FBRD_R = 0;
@@ -39,6 +39,10 @@ void UART1_Init(void){
 	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFFFFFF00) + 0x00000022;
 	GPIO_PORTC_DEN_R |= 0x30; 	
 	GPIO_PORTC_AMSEL_R &= ~0x30; 
+	UART1_IFLS_R = 0x38; // bits 3-5
+	UART1_IM_R = 0x70; // bits 4-6
+	NVIC_PRI1_R = (NVIC_PRI1_R & 0xFFFF00FF) | 0x00004000; // priority 2
+	NVIC_EN0_R = 0x20; 
 }
 
 //------------UART1_InChar------------
@@ -48,15 +52,21 @@ void UART1_Init(void){
 // Input: none
 // Output: char read from UART
 char UART1_InChar(void){
+   // write this
 	while((UART1_FR_R&0x0010) != 0);
 	return ((char)(UART1_DR_R&0xFF));
 }
 
 // Lab 9
 // check software RxFifo
+uint8_t flag = 0;
 uint32_t UART1_InStatus(void){
    // write this
-  return 0; // replace this line
+	if((UART1_FR_R &= ~0x20) == 0x20){
+		flag = 1; 
+	}
+	
+  return flag; // replace this line
 }
 
 //------------UART1_InMessage------------
@@ -76,13 +86,16 @@ void UART1_InMessage(char *bufPt){
 // Busy-wait synchronization
 // Interesting note for Lab9: it will never wait
 void UART1_OutChar(char data){
-	while((UART1_FR_R&0x0020) != 0);
-	UART1_DR_R = data;
+  // write this
+	while((UART1_FR_R & 0x0020) != 0);
+	UART1_DR_R = data; 
 }
 
 // hardware RX FIFO goes from 7 to 8 or more items
 // Interrupts after receiving entire message
 
+int MailStatus;
+uint32_t MailValue;
 #define PF1       (*((volatile uint32_t *)0x40025008))
 void UART1_Handler(void){
   PF1 ^= 0x02;
