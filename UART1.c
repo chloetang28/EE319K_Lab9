@@ -36,8 +36,8 @@ void UART1_Init(void){
 // Input: none
 // Output: char read from UART
 char UART1_InChar(void){
-   // write this
-  return 0; // replace this line
+	while((UART1_FR_R&0x0010) != 0);
+	return ((char)(UART1_DR_R&0xFF));
 }
 
 // Lab 9
