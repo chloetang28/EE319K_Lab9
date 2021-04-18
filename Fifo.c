@@ -9,13 +9,17 @@
 // Declare state variables for FiFo
 //        size, buffer, put and get indexes
 
+#define SIZE 16
+uint32_t static PutI;
+uint32_t static GetI;
+int32_t static FIFO[SIZE];
+
 // *********** FiFo_Init**********
 // Initializes a software FIFO of a
 // fixed size and sets up indexes for
 // put and get operations
 void Fifo_Init() {
-//Complete this
- 
+	PutI = GetI = 0;
 }
 
 // *********** FiFo_Put**********
@@ -25,8 +29,12 @@ void Fifo_Init() {
 //         failure is when the buffer is full
 uint32_t Fifo_Put(char data) {
   //Complete this routine
-   
-   return(1);
+	if(((PutI+1)%SIZE) == GetI){
+		return 0;
+	}
+	FIFO[PutI] = data;
+	PutI = (PutI+1)%SIZE;
+  return(1);
 }
 
 // *********** Fifo_Get**********
@@ -36,8 +44,12 @@ uint32_t Fifo_Put(char data) {
 //         0 failure is when the buffer is empty
 char Fifo_Get(void){char data;
   //Complete this routine
-  
-   return(0); // replace this line
+  if(PutI == GetI){
+		return 0; 
+	}
+	data = FIFO[GetI];
+	GetI = (GetI+1)%SIZE;
+	return data;
 }
 
 // *********** Fifo_Status**********
