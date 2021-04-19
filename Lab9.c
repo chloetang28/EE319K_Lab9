@@ -146,14 +146,19 @@ int main2(void){
 //        Minimum is determined by length of ISR
 // Output: none
 void SysTick_Init(uint32_t period){
-    // write this
+	NVIC_ST_CTRL_R = 0;    // disable SysTick
+	NVIC_ST_RELOAD_R = period - 1;   // max reload value
+	NVIC_ST_CURRENT_R = 0; // write to CURRENT
+	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R&0x00FFFFFF)|0x20000000; // priority
+	NVIC_ST_CTRL_R = 7; // ENABLE, INTEN, CLK SRC	
+
 }
 
 // Get fit from excel and code the convert routine with the constants
 // from the curve-fit
 uint32_t Convert(uint32_t input){
 // from lab 8
-  return 0; //replace this line
+  return (156*input)/4096+27;
 }
 
 
@@ -182,6 +187,34 @@ int main(void){  // valvano version
 
 
 void SysTick_Handler(void){ 
-  // write this
+	PF1 ^= 0x02;
+	uint32_t digit;
+	uint32_t ascii;
+	
+	Data = ADC_In();
+	Data = Convert(Data);
+	UART1_OutChar(STX);
+	digit = Data/1000;
+	ascii = digit + 0x30;
+	UART1_OutChar(ascii);
+	UART1_OutChar(0x2E);
+	
+	Data = Data - (digit*1000);
+	digit = Data/100;
+	ascii = digit + 0x30;
+	UART1_OutChar(ascii);
+	
+	Data = Data - (digit*100);
+	digit = Data/10;
+	ascii = digit + 0x30;
+	UART1_OutChar(ascii);
+	
+	Data = Data - (digit*10);
+	ascii = digit + 0x30;
+	UART1_OutChar(ascii);
+	
+	UART1_OutChar(0x0D);
+	UART1_OutChar(0x03);
+	TxCounter++;
 }
 
