@@ -20,6 +20,7 @@
 #include "UART1.h"
 #include "../inc/tm4c123gh6pm.h"
 
+uint32_t errorCount; 
 
 // Initialize UART1
 // Baud rate is 1000 bits/sec
@@ -29,20 +30,25 @@ void UART1_Init(void){
  // write this
 	SYSCTL_RCGCUART_R |= 0x0002; 
 	SYSCTL_RCGCGPIO_R |= 0x0004; 
-	UART1_CTL_R &= ~0x0001; 
+	UART1_CTL_R &= ~0x0001; // disable UART
 	UART1_IBRD_R = 5000;
 	UART1_FBRD_R = 0;
 	UART1_LCRH_R = 0x0070;
-	UART1_CTL_R = 0x0301; 
-	GPIO_PORTC_AFSEL_R |= 0x30; 
+	UART1_CTL_R = 0x0301; // enable UART
+	GPIO_PORTC_AFSEL_R |= 0x30; //enable alt function on PC5-4
 	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFF00FFFF) + 0x00220000;
 	GPIO_PORTC_DEN_R |= 0x30; 	
-	GPIO_PORTC_AMSEL_R &= ~0x30; 
-	UART1_IFLS_R = ((UART1_IFLS_R &= ~0x28) & (UART1_IFLS_R |= 0x10)) ; // set 1/2 full, bits 3-5
+	GPIO_PORTC_AMSEL_R &= ~0x30; // disable analog on PC5-4
+	UART1_IFLS_R &= 0xFFFFFFC2; // clear bits 0-5 for Rx and Tx FIFO
+	UART1_IFLS_R |= 0x12; // set 0x2 for both 3-5 and 0-2
 	UART1_IM_R |= 0x10; 
 	UART1_CTL_R |= (UART_CTL_UARTEN|UART_CTL_TXE|UART_CTL_RXE);
 	NVIC_PRI1_R |= 0x00600000; // priority 3
 	NVIC_EN0_R |= 0x20; 
+
+	errorCount = 0;
+	Fifo_Init();
+	
 }
 
 //------------UART1_InChar------------
@@ -62,7 +68,8 @@ char UART1_InChar(void){
 uint8_t flag = 0;
 uint32_t UART1_InStatus(void){
    // write this
-	if((UART1_FR_R &= ~0x20) == 0x20){
+//	if((UART1_FR_R &= ~0x20) == 0x20){
+	if(Fifo_Status() != 0){
 		flag = 1; 
 	}
 	
@@ -79,14 +86,14 @@ uint32_t UART1_InStatus(void){
 void UART1_InMessage(char *bufPt){
   // write this
 	uint8_t length = 0; 
-	while(UART1_InChar() != 0x02){};
+	while(UART1_InChar() != STX){};
 	bufPt++;
-	while((UART1_InChar() != 0x03) | (length != 8)){
+	while((UART1_InChar() != ETX) | (length != 8)){
 		*bufPt = UART1_InChar();
 		length++;
 		bufPt++;
 	}
-	if(UART1_InChar() == 0x03){
+	if(UART1_InChar() == ETX){
 		bufPt--; 
 	}
 	*bufPt = '\0';
@@ -104,6 +111,9 @@ void UART1_OutChar(char data){
 	UART1_DR_R = data; 
 }
 
+
+uint8_t RxCounter = 0;
+uint32_t letters; 
 // hardware RX FIFO goes from 7 to 8 or more items
 // Interrupts after receiving entire message
 
@@ -111,8 +121,12 @@ void UART1_OutChar(char data){
 void UART1_Handler(void){
   PF1 ^= 0x02;
   // write this
-//	if(UART1_RIS_R & UART_RIS_RXRIS){
-	
+	while((UART1_FR_R & 0x0010) == 0){
+		letters = UART1_DR_R; 
+		Fifo_Put(letters); 
+	}
+	RxCounter++;
+  UART1_ICR_R = 0x10;   // this clears bit 4 (RXRIS) in the RIS register
 }
 
 
