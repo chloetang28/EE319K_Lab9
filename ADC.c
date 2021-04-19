@@ -9,7 +9,7 @@
 #include "../inc/tm4c123gh6pm.h"
 
 
-
+	uint32_t delay; 
 // ADC initialization function 
 // Initialize ADC for PD2, analog channel 5
 // Input: sac sets hardware averaging
@@ -25,9 +25,7 @@
 // SS3 1st sample source: Ain5 (PD2)
 // SS3 interrupts: flag set on completion but no interrupt requested
 void ADC_Init(uint32_t sac){ 
-// from lab 8
-	uint32_t delay; 
-	
+// from lab 8	
 	SYSCTL_RCGCGPIO_R |= 0x08;  // activate Port D
 	while((SYSCTL_PRGPIO_R & 0x08) == 0){}; 
 	GPIO_PORTD_DIR_R &= ~0x04;	// make PD2 input 
@@ -38,7 +36,11 @@ void ADC_Init(uint32_t sac){
 	delay = SYSCTL_RCGCADC_R; // extra time 2 stabilize
 	delay = SYSCTL_RCGCADC_R; 
 	delay = SYSCTL_RCGCADC_R; 
+	delay = SYSCTL_RCGCADC_R; 
 	delay = SYSCTL_RCGCADC_R; 	
+	delay = SYSCTL_RCGCADC_R; 	
+	delay = SYSCTL_RCGCADC_R; 	
+	delay = SYSCTL_RCGCADC_R; 			
 	ADC0_PC_R = 0x01; 	// congfigure for 125K
 	ADC0_SSPRI_R = 0x0123; // seq3 = highest priority
 	ADC0_ACTSS_R &= ~0x0008; // disable sample sequencer 3
