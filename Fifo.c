@@ -60,13 +60,14 @@ char Fifo_Get(void){char data;
 uint32_t Fifo_Status(void){
   //Complete this routine
 	uint8_t count = 0;
-	uint32_t PutIndex; 
+	uint32_t PutIndex = PutI%SIZE; 
+	uint32_t GetIndex = GetI%SIZE;
 	if(PutI == GetI){
 		return count;
 	}
-	while(PutI != GetI){
+	while(PutIndex != GetIndex){
 		count++;
-		PutIndex--;
+		GetIndex = (GetIndex+1)%SIZE;
 	}
 	return count;
 }
