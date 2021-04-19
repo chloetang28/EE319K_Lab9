@@ -28,21 +28,20 @@
 void UART1_Init(void){
  // write this
 	SYSCTL_RCGCUART_R |= 0x0002; 
-	SYSCTL_RCGCGPIO_R |= 0x0003; 
-//	while((SYSCYL_PRGPIO_R&0x01) == 0){};
-	UART1_CTL_R &= ~0x0002; 
+	SYSCTL_RCGCGPIO_R |= 0x0004; 
+	UART1_CTL_R &= ~0x0001; 
 	UART1_IBRD_R = 5000;
 	UART1_FBRD_R = 0;
 	UART1_LCRH_R = 0x0070;
 	UART1_CTL_R = 0x0301; 
 	GPIO_PORTC_AFSEL_R |= 0x30; 
-	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFFFFFF00) + 0x00000022;
+	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFF00FFFF) + 0x00220000;
 	GPIO_PORTC_DEN_R |= 0x30; 	
 	GPIO_PORTC_AMSEL_R &= ~0x30; 
-	UART1_IFLS_R = 0x38; // bits 3-5
-//	UART1_IM_R = 0x70; // bits 4-6
+	UART1_IFLS_R = ((UART1_IFLS_R &= ~0x28) & (UART1_IFLS_R |= 0x10)) ; // set 1/2 full, bits 3-5
+	UART1_IM_R |= 0x10; 
 	UART1_CTL_R |= (UART_CTL_UARTEN|UART_CTL_TXE|UART_CTL_RXE);
-	NVIC_PRI1_R = (NVIC_PRI1_R & 0xFFFF00FF) | 0x00004000; // priority 2
+	NVIC_PRI1_R |= 0x00600000; // priority 3
 	NVIC_EN0_R |= 0x20; 
 }
 
@@ -80,15 +79,18 @@ uint32_t UART1_InStatus(void){
 void UART1_InMessage(char *bufPt){
   // write this
 	uint8_t length = 0; 
-	while((UART1_DR_R != 0x03) | (length != 8)){
-		*bufPt = UART1_DR_R;
+	while(UART1_InChar() != 0x02){};
+	bufPt++;
+	while((UART1_InChar() != 0x03) | (length != 8)){
+		*bufPt = UART1_InChar();
 		length++;
 		bufPt++;
 	}
-	if(UART1_DR_R == 0x03){
+	if(UART1_InChar() == 0x03){
 		bufPt--; 
 	}
 	*bufPt = '\0';
+
 }
 //------------UART1_OutChar------------
 // Output 8-bit to serial port
@@ -109,6 +111,8 @@ void UART1_OutChar(char data){
 void UART1_Handler(void){
   PF1 ^= 0x02;
   // write this
+//	if(UART1_RIS_R & UART_RIS_RXRIS){
+	
 }
 
 
