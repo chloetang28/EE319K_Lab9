@@ -173,7 +173,7 @@ int main(void){  // valvano version
   PortF_Init();
   UART1_Init();       // initialize UART, 1000 bits/sec
 	LCD_OutFix(0);
-	SSD1306_OutString("cm");
+	SSD1306_OutString(" cm");
 	SysTick_Init(8000000);
 	Fifo_Init();
   // other initialization
@@ -182,7 +182,7 @@ int main(void){  // valvano version
 
 
   while(1){ 
-		while(Fifo_Get() != STX){};    // wait for message
+		while(Fifo_Get() != STX){};			// wait for message
     PF3 ^= 0x08;       // Heartbeat
       // write this
 	  SSD1306_OutClear();
@@ -198,25 +198,32 @@ void SysTick_Handler(void){
   // write this
 	int32_t digit; 
 	int32_t ascii; 
+	
   PF1 ^= 0x02;     // Heartbeat
 	Data = ADC_In();
 	Data= Convert(Data); 
 	UART1_OutChar(STX); 
+	
 	digit = Data/1000; 
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii); 
+	
 	UART1_OutChar(0x2E);
+	
 	Data = Data-(digit*1000); 
 	digit = Data/100; 
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
+	
 	Data = Data-(digit*100);
 	digit = Data/10;
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
+	
 	Data = Data-(digit*10);
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
+	
 	UART1_OutChar(0x0D);
 	UART1_OutChar(ETX);
 	TxCounter++;
