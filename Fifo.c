@@ -5,6 +5,7 @@
 // Student names: change this to your names or look very silly
 // Last modification date: change this to the last modification date or look very silly
 #include <stdint.h>
+#include "fifo.h"
 
 // Declare state variables for FiFo
 //        size, buffer, put and get indexes
