@@ -172,8 +172,6 @@ int main(void){  // valvano version
   ADC_Init(SAC_32);  // turn on ADC, set channel to 5
   PortF_Init();
   UART1_Init();       // initialize UART, 1000 bits/sec
-	LCD_OutFix(0);
-	SSD1306_OutString(" cm");
 	SysTick_Init(8000000);
 	Fifo_Init();
   // other initialization
@@ -182,45 +180,58 @@ int main(void){  // valvano version
 
 
   while(1){ 
-		while(Fifo_Get() != STX){};			// wait for message
     PF3 ^= 0x08;       // Heartbeat
+		SSD1306_SetCursor(0,0);
       // write this
-	  SSD1306_OutClear();
-	  SSD1306_SetCursor(10,2);
-		Position = Convert(Data);
-		LCD_OutFix(Position);
+		while(UART1_InStatus() == 0){}; // wait while empty 
+		while(UART1_InChar() != STX) {}; // wait for message 
 		
-  }
+		char num = UART1_InChar(); 
+		while (num != ETX){
+			SSD1306_OutChar(num); 
+			num = UART1_InChar();    // #
+			SSD1306_OutChar(num); 
+			num = UART1_InChar();    // .
+			SSD1306_OutChar(num); 
+			num = UART1_InChar();    // #
+			SSD1306_OutChar(num); 
+			num = UART1_InChar();    // #
+			SSD1306_OutChar(num);   
+			SSD1306_OutString( "cm"); 
+			num = UART1_InChar();		 // space 
+			SSD1306_OutChar(num); 
+			num = UART1_InChar();    // ETX
+}
+}
 }
 
+int digit; 
+int ascii;
 
 void SysTick_Handler(void){ 
   // write this
-	int32_t digit; 
-	int32_t ascii; 
-	
   PF1 ^= 0x02;     // Heartbeat
 	Data = ADC_In();
-	Data= Convert(Data); 
+	Position = Convert(Data); 
 	UART1_OutChar(STX); 
 	
-	digit = Data/1000; 
+	digit = Position/1000; 
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii); 
 	
 	UART1_OutChar(0x2E);
 	
-	Data = Data-(digit*1000); 
-	digit = Data/100; 
+	Position = Position-(digit*1000); 
+	digit = Position/100; 
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
 	
-	Data = Data-(digit*100);
-	digit = Data/10;
+	Position = Position-(digit*100);
+	digit = Position/10;
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
 	
-	Data = Data-(digit*10);
+	Position = Position-(digit*10);
 	ascii = digit + 0x30; 
 	UART1_OutChar(ascii);
 	
@@ -228,4 +239,3 @@ void SysTick_Handler(void){
 	UART1_OutChar(ETX);
 	TxCounter++;
 }
-
