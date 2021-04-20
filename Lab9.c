@@ -162,10 +162,34 @@ uint32_t Convert(uint32_t input){
 }
 
 
+/*int main(void){
+  DisableInterrupts();
+  TExaS_Init(&LogicAnalyzerTask);
+  SSD1306_Init(SSD1306_SWITCHCAPVCC);
+  SSD1306_OutClear(); 
+  PortF_Init();
+  UART1_Init();       // enable UART
+	SysTick_Init(8000000);
+  EnableInterrupts();	
+
+  char OutData = '0'; 	
+	while(1){
+	 UART1_OutChar(STX);
+   UART1_OutChar(OutData);
+	 UART1_OutChar(OutData);
+	 UART1_OutChar(OutData);
+   UART1_OutChar(OutData);
+	 UART1_OutChar(OutData);
+	 UART1_OutChar(OutData);
+   UART1_OutChar(ETX);
+	}
+	
+}
+*/
 // final main program for bidirectional communication
 // Sender sends using SysTick Interrupt, 5Hz sampling
 // Receiver receives using RX
-int main(void){  // valvano version
+int main9(void){  // valvano version
   DisableInterrupts();  
   TExaS_Init(&LogicAnalyzerTask);
   SSD1306_Init(SSD1306_SWITCHCAPVCC);
@@ -188,21 +212,21 @@ int main(void){  // valvano version
 		
 		char num = UART1_InChar(); 
 		while (num != ETX){
-			SSD1306_OutChar(num); 
-			num = UART1_InChar();    // #
-			SSD1306_OutChar(num); 
-			num = UART1_InChar();    // .
-			SSD1306_OutChar(num); 
-			num = UART1_InChar();    // #
-			SSD1306_OutChar(num); 
-			num = UART1_InChar();    // #
-			SSD1306_OutChar(num);   
-			SSD1306_OutString( "cm"); 
-			num = UART1_InChar();		 // space 
-			SSD1306_OutChar(num); 
-			num = UART1_InChar();    // ETX
-}
-}
+			SSD1306_OutChar(num); 	 // #
+			num = UART1_InChar();    
+			SSD1306_OutChar(num);    // .
+			num = UART1_InChar();    
+			SSD1306_OutChar(num);    // #
+			num = UART1_InChar();    
+			SSD1306_OutChar(num);    // #
+			num = UART1_InChar();    
+			SSD1306_OutChar(num);    // space 
+			SSD1306_OutString("cm"); 
+			num = UART1_InChar();		 
+			SSD1306_OutChar(num);    // ETX
+			num = UART1_InChar();    
+		}
+	}
 }
 
 int digit; 
@@ -210,32 +234,36 @@ int ascii;
 
 void SysTick_Handler(void){ 
   // write this
-  PF1 ^= 0x02;     // Heartbeat
+  PF2 ^= 0x04;     // Heartbeat
 	Data = ADC_In();
 	Position = Convert(Data); 
 	UART1_OutChar(STX); 
 	
-	digit = Position/1000; 
-	ascii = digit + 0x30; 
-	UART1_OutChar(ascii); 
+//	digit = Position/1000; 
+//	ascii = digit + 0x30; 
+//	UART1_OutChar(ascii); 
+//	UART1_OutChar(0x0D);
 	
-	UART1_OutChar(0x2E);
+//	UART1_OutChar(0x2E);
 	
-	Position = Position-(digit*1000); 
+//	Position = Position-(digit*1000); 
 	digit = Position/100; 
 	ascii = digit + 0x30; 
-	UART1_OutChar(ascii);
+	UART1_OutChar(ascii);   // #_ _ _ 
+	
+	UART1_OutChar(0x2E);    // _._ _
 	
 	Position = Position-(digit*100);
 	digit = Position/10;
 	ascii = digit + 0x30; 
-	UART1_OutChar(ascii);
+	UART1_OutChar(ascii);   // _.#_
 	
 	Position = Position-(digit*10);
 	ascii = digit + 0x30; 
-	UART1_OutChar(ascii);
+	UART1_OutChar(ascii); // _._#
 	
-	UART1_OutChar(0x0D);
+	UART1_OutChar(0x20); // space
+	UART1_OutChar(0x0D); // CR
 	UART1_OutChar(ETX);
 	TxCounter++;
 }
