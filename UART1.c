@@ -59,8 +59,10 @@ void UART1_Init(void){
 // Output: char read from UART
 char UART1_InChar(void){
    // write this
-	while((UART1_FR_R&0x0010) != 0);
-	return ((char)(UART1_DR_R&0xFF));  // aka like FIFO_Get
+	//while((UART1_FR_R&0x0010) != 0);
+	//return ((char)(UART1_DR_R&0xFF));  // aka like FIFO_Get
+	while(Fifo_Status() == 0){};
+	return Fifo_Get();
 }
 
 // Lab 9
