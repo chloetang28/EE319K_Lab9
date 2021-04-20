@@ -34,7 +34,6 @@ void UART1_Init(void){
 	UART1_IBRD_R = 5000;
 	UART1_FBRD_R = 0;
 	UART1_LCRH_R = 0x0070;
-	UART1_CTL_R = 0x0301; // enable UART
 	GPIO_PORTC_AFSEL_R |= 0x30; //enable alt function on PC5-4
 	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFF00FFFF) + 0x00220000;
 	GPIO_PORTC_DEN_R |= 0x30; 	
@@ -42,12 +41,13 @@ void UART1_Init(void){
 	UART1_IFLS_R &= 0xFFFFFFC2; // clear bits 0-5 for Rx and Tx FIFO
 	UART1_IFLS_R |= 0x12; // set 0x2 for both 3-5 and 0-2
 	UART1_IM_R |= 0x10; 
-	UART1_CTL_R |= (UART_CTL_UARTEN|UART_CTL_TXE|UART_CTL_RXE);
+//	UART1_CTL_R |= (UART_CTL_UARTEN|UART_CTL_TXE|UART_CTL_RXE);
+	UART1_CTL_R = 0x0301; // enable UART
 	NVIC_PRI1_R |= 0x00600000; // priority 3
-	NVIC_EN0_R |= 0x20; 
+	NVIC_EN0_R |= 0x40; // int 6
 
 	errorCount = 0;
-	Fifo_Init();
+//	Fifo_Init();
 	
 }
 
@@ -60,7 +60,7 @@ void UART1_Init(void){
 char UART1_InChar(void){
    // write this
 	while((UART1_FR_R&0x0010) != 0);
-	return ((char)(UART1_DR_R&0xFF));
+	return ((char)(UART1_DR_R&0xFF));  // aka like FIFO_Get
 }
 
 // Lab 9
@@ -68,12 +68,7 @@ char UART1_InChar(void){
 uint8_t flag = 0;
 uint32_t UART1_InStatus(void){
    // write this
-//	if((UART1_FR_R &= ~0x20) == 0x20){
-	if(Fifo_Status() != 0){
-		flag = 1; 
-	}
-	
-  return flag; // replace this line
+	return Fifo_Status(); 
 }
 
 //------------UART1_InMessage------------
